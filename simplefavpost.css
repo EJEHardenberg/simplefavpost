@@ -7,6 +7,15 @@
 	left: 25px;
 	z-index: 100;
 }
+.post-fav-link{
+	width: 100%;
+	height: 100%;
+	z-index: 5;
+	display: inline-block;
+}
+.small {
+	zoom: 25%;
+}
 .heart { 
 	position: relative; 
 	width: 100px; 

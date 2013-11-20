@@ -51,6 +51,12 @@ class SimpleFavPost{
 		return $post_simplefavposts;
 	}
 
+	public static function get_popular($limit=5){
+		global $wpdb;
+		$sql = "SELECT count(1) as total, post_id, post_title FROM {$wpdb->simplefavposts} sfp JOIN {$wpdb->posts} p ON sfp.post_id=p.ID GROUP BY post_id LIMIT %d";
+		return $wpdb->get_results($wpdb->prepare($sql, $limit));
+	}
+
 	public static function check_exists($user_id, $post_id){
 		global $wpdb;
 		$sql = "SELECT id FROM {$wpdb->simplefavposts} WHERE post_id=%d AND user_id=%d";
@@ -87,7 +93,7 @@ function simplefavpost_register_js_css() {
 	wp_register_style( 'simplefavpost_css', plugin_dir_url(__FILE__) . 'simplefavpost.css');
 	wp_register_script('simplefavpost_js',  plugin_dir_url(__FILE__) . 'simplefavpost.js', array( 'jquery' ), '1', true ); 
 }
-function simplefav_widget(){ 	register_widget('SimpleFavWidget'); }
+function simplefav_widget(){ 	register_widget('SimpleFavWidget'); register_widget('SimpleFavWidgetPopular'); }
 
 function simplefavpost_ajax(){
 	check_ajax_referer('simplefavpost_ajax_security_is_a_big_deal','security');
@@ -128,9 +134,59 @@ class SimpleFavWidget extends WP_Widget{
 		$favs = SimpleFavPost::get_num_favorites_for($post->ID);
 		$favs = $favs[0];
 		$favs = is_null($favs->total) ? 0 : $favs->total;
-		echo "<div class=\"post-fav heart\"><span ref=\"$favs\">$favs Favs</span></div>";
+		echo "<div class=\"post-fav heart counter\"><span ref=\"$favs\">$favs Favs</span></div>";
 		echo $args['after_widget'];
 	}
+}	
+
+
+class SimpleFavWidgetPopular extends WP_Widget{
+	public function __construct(){
+		parent::__construct(
+			'popular_fav_widget',
+			__('Popular Post Fav ','text_domain'),
+			array(
+				'title'=>'Popular Post Fav\'s',
+				'classname' => 'post-fav',
+				'description' => 'Displays the most popular posts'
+			)
+		);
+	}
+
+	public function widget($args, $instance){
+		wp_enqueue_style('simplefavpost_css');
+		wp_enqueue_script('simplefavpost_js');
+		$limit = isset($instance['limit']) ? $instance['limit'] : 3;
+		$populars = SimpleFavPost::get_popular($limit);		
+		echo $args['before_widget'];
+		foreach ($populars as $row) {
+			echo '<div class="post-fav">';
+			echo "<div class=\"post-fav small heart\"><span>{$row->total}</span></div>";
+			echo "<a class=\"post-fav-link\" href=\"" . get_permalink($row->post_id) . "\">{$row->post_title}</a>";
+			echo '</div>';
+		}
+		echo $args['after_widget'];
+	}
+
+	public function form( $instance ) {
+		// outputs the options form on admin
+		$limit = 3;
+		if(isset($instance['limit']))
+			$limit = $instance['limit'];
+		?>
+		<label for="<?php echo $this->get_field_name( 'limit' ); ?>">How many posts to show?</label>
+		<input type="number" min="1"  id="<?php echo $this->get_field_id( 'limit' ) ?>" 
+			name="<?php echo $this->get_field_name( 'limit' ); ?>" 
+			value="<?php echo $limit; ?>" /> 
+		<?php
+	}
+
+	public function update( $new_instance, $old_instance ) {
+		$instance = array();
+		$instance['limit'] = empty($new_instance['limit']) ? 3 : $new_instance['limit'];
+		return $instance;
+	}
+
 }	
 
 register_activation_hook( __FILE__, array('SimpleFavPost','install'));

@@ -30,7 +30,7 @@ jQuery(document).ready(function($) {
 			}
 		});
 	}else{
-		$('.post-fav').fadeTo(0,.5,function(){});
+		$('.counter').fadeTo(0,.5,function(){});
 	}
 	
 });

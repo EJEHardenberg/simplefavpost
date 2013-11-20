@@ -1,7 +1,7 @@
 SimpleFavPost
 =============================================
 
-![Snapshot of Fav Icon](/EJEHardenberg/simplefavpost/blob/master/snapshot.jpg "Snapshot of Fav Icon")
+![Snapshot of Fav Icon](https://raw.github.com/EJEHardenberg/simplefavpost/master/snapshot.png "Snapshot of Fav Icon")
 
 SimpleFavPost is an easy counter that lets users of your blog click a 
 nice heart shaped icon to Favorite your posts. 

@@ -15,6 +15,4 @@ To Enable:
 
 Plans:
 
-- Make Secondary Widget to Display a Users favorites.
-- Make Another Widget to display the most favorited posts.
 - Make people smile.

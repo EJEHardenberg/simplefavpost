@@ -51,6 +51,13 @@ class SimpleFavPost{
 		return $post_simplefavposts;
 	}
 
+	public static function get_users_favorites($user_id, $limit=5){
+		global $wpdb;
+		$sql = "SELECT post_id,post_title FROM {$wpdb->simplefavposts} s JOIN {$wpdb->posts} p ON s.post_id=p.ID WHERE user_id=%d LIMIT %d";
+		$post_simpleuserfavposts = $wpdb->get_results($wpdb->prepare($sql,$user_id, $limit));
+		return $post_simpleuserfavposts;	
+	}
+
 	public static function get_popular($limit=5){
 		global $wpdb;
 		$sql = "SELECT count(1) as total, post_id, post_title FROM {$wpdb->simplefavposts} sfp JOIN {$wpdb->posts} p ON sfp.post_id=p.ID GROUP BY post_id LIMIT %d";
@@ -93,7 +100,7 @@ function simplefavpost_register_js_css() {
 	wp_register_style( 'simplefavpost_css', plugin_dir_url(__FILE__) . 'simplefavpost.css');
 	wp_register_script('simplefavpost_js',  plugin_dir_url(__FILE__) . 'simplefavpost.js', array( 'jquery' ), '1', true ); 
 }
-function simplefav_widget(){ 	register_widget('SimpleFavWidget'); register_widget('SimpleFavWidgetPopular'); }
+function simplefav_widget(){ 	register_widget('SimpleFavWidget'); register_widget('SimpleFavWidgetPopular'); register_widget('UserFavWidget'); }
 
 function simplefavpost_ajax(){
 	check_ajax_referer('simplefavpost_ajax_security_is_a_big_deal','security');
@@ -187,6 +194,55 @@ class SimpleFavWidgetPopular extends WP_Widget{
 		return $instance;
 	}
 
+}	
+
+class UserFavWidget extends WP_Widget{
+	public function __construct(){
+		parent::__construct(
+			'user_fav_widget',
+			__('User Post Fav','text_domain'),
+			array(
+				'title'=>'User Post Fav\'s',
+				'classname' => 'post-fav',
+				'description' => 'Widget to display a users favorites posts'
+			)
+		);
+	}
+
+	public function form( $instance ) {
+		// outputs the options form on admin
+		$limit = 3;
+		if(isset($instance['limit']))
+			$limit = $instance['limit'];
+		?>
+		<label for="<?php echo $this->get_field_name( 'limit' ); ?>">How many posts to show?</label>
+		<input type="number" min="1"  id="<?php echo $this->get_field_id( 'limit' ) ?>" 
+			name="<?php echo $this->get_field_name( 'limit' ); ?>" 
+			value="<?php echo $limit; ?>" /> 
+		<?php
+	}
+
+	public function update( $new_instance, $old_instance ) {
+		$instance = array();
+		$instance['limit'] = empty($new_instance['limit']) ? 3 : $new_instance['limit'];
+		return $instance;
+	}
+
+	public function widget($args, $instance){
+		wp_enqueue_style('simplefavpost_css');
+		$u = get_current_user_id();
+		$limit = isset($instance['limit']) ? $instance['limit'] : 3;
+		echo $args['before_widget'];
+		$favs = SimpleFavPost::get_users_favorites($u,$limit);
+		echo $args['before_widget'];
+		foreach ($favs as $row) {
+			echo '<div class="post-fav">';
+			echo "<div class=\"post-fav small heart\"></div>";
+			echo "<a class=\"post-fav-link\" href=\"" . get_permalink($row->post_id) . "\">{$row->post_title}</a>";
+			echo '</div>';
+		}
+		echo $args['after_widget'];
+	}
 }	
 
 register_activation_hook( __FILE__, array('SimpleFavPost','install'));
